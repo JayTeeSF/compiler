@@ -16,16 +16,17 @@ class Interpreter
 
   NODE_CMD = `which node`
   def run(js)
-    `echo "#{js}" | #{NODE_CMD}`
+    puts `echo "#{js}" | #{NODE_CMD}`
   end
 end
 
 class Compiler
   DEFAULT_CODE =<<-EOC
     def f() 1 end
-    def g(x) 2 end
-    def h(x,y) 3 end
-    def hh(x,y) x end
+    def og(x) 2 end
+    def g(x) x end
+    def h(x,y) add(y, 3) end
+    def oh(x,y) x end
     def i(x) j(x) end
     def j(x,y) h(x,y) end
     def k(x,y) h(g(x), h(x,y)) end
@@ -44,8 +45,18 @@ class Compiler
     tokens = @lexer.tokenize(@code.dup)
     tree = Parser.new(tokens).parse
     js = generate(tree)
-    #puts js
-    return js # stop here if a compiler
+
+    # apparently compilers add a "runtime"
+    # i.e.
+    # in c it's minimal
+    # in go it's large: the garbage collector, etc
+    # our runtime includes an "add" function (in our standard library :-) )
+    return js + "\n" + runtime # stop here if a compiler
+  end
+
+  def runtime
+    # return "function add(a, b) { return a + b }; if (k(2, 21) === 27) { console.log('ok'); } else { console.log('nok');}"
+    return "function add(a, b) { return a + b }; console.log('ok')"
   end
 
   def generate(node)
